@@ -1,0 +1,12 @@
+*
+!.env
+!pyproject.toml
+!cities.yaml
+!uv.lock
+!**/*.py
+!**/*.html
+!**/*.css
+!**/*.js
+!**/*.sh
+!**/*.ini
+!**/*.mako
