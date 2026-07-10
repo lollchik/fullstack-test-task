@@ -9,7 +9,7 @@ async def list_alerts(session: AsyncSession) -> list[Alert]:
     result = await session.execute(
         select(Alert).order_by(Alert.created_at.desc()).options(joinedload(Alert.file))
     )
-    return list(result.scalar().all())
+    return list(result.scalars().all())
 
 
 async def create_alert(session: AsyncSession, file_id: str, level: str, message: str) -> Alert:
