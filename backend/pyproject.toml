@@ -3,14 +3,21 @@ name = "backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.18.4",
     "asyncpg>=0.30.0",
-    "celery[redis]>=5.6.3",
     "fastapi>=0.135.3",
+    "granian[reload]>=2.7.9",
+    "gunicorn>=26.0.0",
     "pydantic>=2.12.5",
+    "pydantic-settings>=2.14.2",
     "python-multipart>=0.0.20",
+    "redis>=6.4.0",
+    "rq>=2.10.0",
     "sqlalchemy>=2.0.48",
+    "starlette>=1.0.0",
+    "uuid-utils>=0.17.0",
+    "uuid7>=0.1.0",
     "uvicorn>=0.42.0",
 ]

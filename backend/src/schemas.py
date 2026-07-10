@@ -1,12 +1,12 @@
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
-
+from uuid import UUID
 
 class FileItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: str
+    id: UUID
     title: str
     original_name: str
     mime_type: str
@@ -27,8 +27,8 @@ class FileUpdate(BaseModel):
 class AlertItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
-    file_id: str
+    id: UUID
+    file_id: UUID
     level: str
     message: str
     created_at: datetime

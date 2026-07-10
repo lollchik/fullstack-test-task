@@ -1,38 +1,70 @@
-services:
-  backend:
-    build: ./backend
-    command: uvicorn src.app:app --host 0.0.0.0 --reload --port 8000
-    container_name: backend
-    volumes:
-      - ./backend:/backend
-    env_file: ".env.dev"
-    ports:
-      - "8000:8000"
-    depends_on:
-      - backend-db
+version: "3.8"
 
-  backend-worker:
-    build: ./backend
-    command: [ 'celery', '-A', 'src.tasks.celery_app', 'worker', '-l', 'info' ]
-    container_name: backend-worker
-    env_file: ".env.dev"
-    volumes:
-      - ./backend:/backend
-    depends_on:
-      - backend-db
+services:
 
   backend-db:
-    image: postgres:latest
+    image: postgres:16-alpine
     container_name: backend-db
     ports:
-      - "5433:5433"
-    env_file: ".env.dev"
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - backend-db-volume:/var/lib/postgresql
+      - backend-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
 
   backend-redis:
     image: redis:latest
     container_name: backend-redis
+
+  backend-migrations:
+    build: ./backend
+    container_name: backend-migrations
+    command: uv run alembic upgrade head
+    env_file: ".env.dev"
+    volumes:
+      - ./backend:/backend
+      - /backend/.venv # АНОНИМНЫЙ ВОЛЮМ: скрывает локальную папку .venv от контейнера
+    depends_on:
+      backend-db:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    command: granian --interface asgi src.app:app --host 0.0.0.0 --port 8000 --workers 4 --reload
+    container_name: backend
+    volumes:
+      - ./backend:/backend
+      - /backend/.venv # АНОНИМНЫЙ ВОЛЮМ: скрывает локальную папку .venv от контейнера
+    env_file: ".env.dev"
+    ports:
+      - "8000:8000"
+    depends_on:
+      backend-db:
+        condition: service_healthy
+      backend-migrations:
+        condition: service_completed_successfully
+
+  backend-worker:
+    build: ./backend
+    command: [ 'rq', 'worker', '-u', 'redis://backend-redis:6379/0', 'file_tasks' ]
+    container_name: backend-worker
+    env_file: ".env.dev"
+    volumes:
+      - ./backend:/backend
+      - /backend/.venv # АНОНИМНЫЙ ВОЛЮМ: скрывает локальную папку .venv от контейнера
+    depends_on:
+      backend-db:
+        condition: service_healthy
+      backend-migrations:
+        condition: service_completed_successfully
 
   frontend:
     build:
